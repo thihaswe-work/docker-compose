@@ -14,7 +14,7 @@ RUN npm install --legacy-peer-deps --no-audit --progress=false
 COPY . .
 
 # Expose backend port
-# EXPOSE 5000
+EXPOSE 5000
 
 # Start the app
 CMD ["npm", "start"]

@@ -1,115 +1,54 @@
-1. Basic Structure
+# Docker Compose Guide 🚀
 
-Every docker-compose.yml file has 3 main sections:
+This guide explains a basic Docker Compose setup for a **backend** and **frontend** service.
 
-version: "3" # optional in modern Compose (v2+ doesn’t require this)
+---
 
-services: # define your containers
-service_name:
-image: ... # or build: ...
-ports: - "host_port:container_port"
-volumes: - "./local:path/in/container"
-environment: - KEY=value
+## 1. Services Overview
 
-services → each service = one container (like backend, frontend, db).
+Every `docker-compose.yaml` file defines **services** (containers) and their configuration:
 
-image → use a prebuilt Docker image (nginx, mysql).
-
-build → build your own image from a Dockerfile in a folder.
-
-ports → maps local machine port → container port.
-
-volumes → share files between host & container.
-
-environment → set environment variables inside container.
-
-2. Your Example, Explained
-   services:
-   backend: # service name = "backend"
-   build: ./backend # build an image from ./backend/Dockerfile
-   ports: - "5000:5000" # map host:5000 -> container:5000
-
-frontend: # service name = "frontend"
-build: ./frontend # build from ./frontend/Dockerfile
-ports: - "3000:3000" # map host:3000 -> container:3000
-depends_on: # wait until backend starts before frontend - backend
-command: ["npm", "run", "dev", "--", "--host"] # override Dockerfile CMD so vite runs correctly
-
-3. Step-by-Step Thinking
-
-When writing a docker-compose.yml, ask yourself:
-
-What containers do I need?
-→ Example: backend, frontend, db.
-
-Where do they come from?
-
-Prebuilt? → image: node:20
-
-Custom? → build: ./backend
-
-How do they talk to each other?
-→ Same file = same network.
-
-Frontend can call backend at http://backend:5000.
-
-What ports do I expose to my machine?
-
-Backend → 5000:5000
-
-Frontend → 3000:3000
-
-Do I need special configs?
-
-Override command if needed.
-
-Add volumes if you want live reload.
-
-4. Minimal Example You Can Write Yourself
-   services:
-   app:
-   image: node:20
-   working_dir: /app
-   volumes: - .:/app
-   command: ["node", "server.js"]
-   ports: - "5000:5000"
-
-👉 This runs a Node.js app from your local folder.
-
-⚡ Tip: Once you learn the “building blocks” (services → build/image, ports, volumes, env, command), you can write any Compose file by just combining these.
-
-Would you like me to make you a cheat sheet of the most common Compose keywords with small examples, so you can keep it next to you when writing?
-
-You said:
-can i depends_on two things?
-ChatGPT said:
-
-Yes ✅ you can absolutely make a service depends_on multiple other services.
-
-In YAML, you just list them in an array:
-
+```yaml
 services:
-backend:
-build: ./backend
-ports: - "5000:5000"
+  backend:
+    build: ./backend
+    ports:
+      - "5000:6000"
+    # Uncomment to pass environment variables
+    # environment:
+    #   - PORT=${PORT}
+    # env_file:
+    #   - ./backend/.env
 
-database:
-image: mysql:8
-environment: - MYSQL_ROOT_PASSWORD=secret
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    command: ["npm", "run", "dev", "--", "--host"]
+```
 
-frontend:
-build: ./frontend
-ports: - "3000:3000"
-depends_on: - backend - database # ✅ depends on two services
-command: ["npm", "run", "dev", "--", "--host"]
+## 2. What Each Section Means
 
-👉 This means:
+- **services** → each service represents a container (backend, frontend, db, etc.).
+- **backend / frontend** → the name of the service (can be any identifier).
+- **build** → build the image from the folder containing the Dockerfile.
+- **ports** → maps host machine port → container port (`host:container`).
+- **environment** → pass environment variables into the container.
+- **env_file** → reference a `.env` file for environment variables.
+- **depends_on** → ensures one service starts before another (start order only, not readiness).
+- **command** → override the default command in the Dockerfile.
 
-Docker will start backend and database before frontend.
+### .env Files in Docker Compose
 
-But ⚠️ depends_on only controls start order, not “readiness.”
+- `.env` files in the **parent folder** (where `docker-compose.yml` is located) **work automatically**.
+- `.env` files inside **subfolders** (like `./backend/.env`) **do not automatically get picked up** unless you explicitly reference them in your `docker-compose.yml`:
 
-Example: database may take time to fully initialize (MySQL booting).
-
-If frontend tries to connect too early, you might need extra logic like wait-for-it
-or healthchecks.
+```yaml
+services:
+  backend:
+    build: ./backend
+    env_file:
+      - ./backend/.env
+```
