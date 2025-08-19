@@ -2,7 +2,11 @@ services:
   backend:
     build: ./backend
     ports:
-      - "5000:5000"
+      - "5000:6000"
+    environment:
+      - PORT=${PORT} # pass PORT into the container
+    env_file:
+      - .env
 
   frontend:
     build: ./frontend
